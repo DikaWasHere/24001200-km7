@@ -1,5 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-const imageKit = require("../libs/imagekit");
+const imageKit = require("../libs/imageKit");
 const prisma = new PrismaClient();
 
 class mediaControllers {
