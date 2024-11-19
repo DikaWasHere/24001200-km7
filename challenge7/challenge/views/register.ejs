@@ -1,26 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register Page</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Register</h1>
     <form action="/register" method="POST">
-        <label for="name">Name</label>
-        <br>
-        <input type="text" name="name" placeholder="Enter your name" required>
-        <br>
-        <label for="email">Email</label>
-        <br>
-        <input type="email" name="email" placeholder="Enter email" required>
-        <br>
-        <label for="password">Password</label>
-        <br>
-        <input type="password" name="password" placeholder="Enter password" required>
-        <br><br>
-        <button type="submit">Sign up</button>
+      <label for="name">Name</label>
+      <br />
+      <input type="text" name="name" placeholder="Enter your name" required />
+      <br />
+      <label for="email">Email</label>
+      <br />
+      <input type="email" name="email" placeholder="Enter email" required />
+      <br />
+      <label for="password">Password</label>
+      <br />
+      <input
+        type="password"
+        name="password"
+        placeholder="Enter password"
+        required
+      />
+      <br /><br />
+      <button id="button-trigger" type="submit">Sign up</button>
     </form>
-</body>
+    <div id="register-notifications"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      let socket = io();
+
+      socket.on("notification", (data) => {
+        const divIoNotif = document.getElementById("register-notifications");
+        const createParagraph = document.createElement("p");
+        createParagraph.innerText = data;
+
+        divIoNotif.appendChild(createParagraph);
+        setTimeout(() => {
+          window.location.replace("/login");
+        }, 2000);
+      });
+
+      const buttonTrigger = document.getElementById("button-trigger");
+      buttonTrigger.addEventListener("click", () => {
+        socket.emit("sendNotification", "Selamat Datang Tuan");
+        e.preventDefault();
+      });
+    </script>
+  </body>
 </html>

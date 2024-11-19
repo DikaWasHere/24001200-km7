@@ -27,10 +27,10 @@ class UserControllers {
         },
       });
       console.log(saveData, "==> saveData");
-      res.send("Anda berhasil Register");
+      // res.send("Anda berhasil Register");
     } catch (error) {
       console.log(error);
-      res.status(500).json({ error: "Something wrong i can feel it" });
+      res.status(500).json({ error: "Terjadi kesalahan" });
     }
   }
 
@@ -60,60 +60,102 @@ class UserControllers {
         SECRET_ACCESS_JWT
       );
 
-      //res.send(`Selamat Datang ${findUser.name} Anda berhasil masuk`);
       res.status(200).json({
         message: `Selamat ${findUser.name}, Anda berhasil login`,
         accessToken,
       });
     } catch (error) {
       console.log(error);
-      res.status(500).json({ error: "Something wrong i can feel it" });
+      res.status(500).json({ error: "Terjadi kesalahan" });
     }
+  }
+
+  static async forgetPasswordPage(req, res) {
+    res.render("forgetPassword"); // Menampilkan halaman forget password
   }
 
   static async forgetPassword(req, res) {
     const { email } = req.body;
 
     try {
-      // Find user by email
       const user = await prisma.user.findUnique({
         where: { email },
       });
 
-      // Check if user exists
       if (!user) {
-        return res.status(404).json({
-          message: "User not found with this email",
-        });
+        return res.status(404).json({ message: "Email tidak ditemukan" });
       }
 
-      // Generate a random reset token
-      const resetToken = crypto.randomBytes(32).toString("hex");
+      // Generate reset token (15 menit valid)
+      const resetToken = jwt.sign(
+        { id: user.id, email: user.email },
+        process.env.SECRET_ACCESS_JWT,
+        { expiresIn: "15m" }
+      );
 
-      // Store reset token with expiration (valid for 1 hour)
-      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+      const resetUrl = `http://localhost:3000/reset-password?token=${resetToken}`;
 
-      // Update user with reset token and expiry
-      await prisma.user.update({
-        where: { email },
-        data: {
-          resetToken,
-          resetTokenExpiry,
+      const transporter = require("nodemailer").createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
         },
       });
 
-      // Send password reset email (you'll need to implement email sending logic)
-      await sendPasswordResetEmail(user.email, resetToken);
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Permintaan Reset Password",
+        html: `
+          <h2>Reset Password</h2>
+          <p>Klik link berikut untuk mereset password Anda:</p>
+          <a href="${resetUrl}">Reset Password</a>
+        `,
+      });
 
       res.status(200).json({
-        message: "Password reset link has been sent to your email",
+        message: "Link reset password telah dikirim ke email Anda",
       });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({
-        message: "Error processing password reset request",
-        error: err.message,
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Terjadi kesalahan pada server" });
+    }
+  }
+
+  // static async resetPasswordPage(req, res) {
+  //   const { token } = req.query;
+
+  //   try {
+  //     jwt.verify(token, process.env.SECRET_ACCESS_JWT);
+  //     res.render("resetPassword", { token });
+  //   } catch (error) {
+  //     console.error(error);
+  //     res
+  //       .status(400)
+  //       .json({ message: "Token tidak valid atau telah kedaluwarsa" });
+  //   }
+  // }
+
+  static async resetPassword(req, res) {
+    const { token, newPassword } = req.body;
+
+    try {
+      const decoded = jwt.verify(token, process.env.SECRET_ACCESS_JWT);
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      await prisma.user.update({
+        where: { id: decoded.id },
+        data: { password: hashedPassword },
       });
+
+      // res.status(200).json({ message: "Password berhasil direset" });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(400)
+        .json({ message: "Token tidak valid atau telah kedaluwarsa" });
     }
   }
 }
