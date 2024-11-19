@@ -123,20 +123,6 @@ class UserControllers {
     }
   }
 
-  // static async resetPasswordPage(req, res) {
-  //   const { token } = req.query;
-
-  //   try {
-  //     jwt.verify(token, process.env.SECRET_ACCESS_JWT);
-  //     res.render("resetPassword", { token });
-  //   } catch (error) {
-  //     console.error(error);
-  //     res
-  //       .status(400)
-  //       .json({ message: "Token tidak valid atau telah kedaluwarsa" });
-  //   }
-  // }
-
   static async resetPassword(req, res) {
     const { token, newPassword } = req.body;
 
